@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bot Orders · Rotisería Sin TACC
 
-## Getting Started
+Chatbot de WhatsApp + panel web para una rotisería sin TACC. El equipo carga productos, stock,
+precios y horarios desde el panel, y el bot atiende a los clientes usando **solo** esos datos.
+Cada pedido llega al panel en tiempo real y un empleado lo confirma o rechaza.
 
-First, run the development server:
+> Proyecto personal de portfolio. Estado: en construcción (Sprint 1).
+
+## Stack
+
+Next.js (App Router) · TypeScript estricto · Tailwind CSS · PostgreSQL + Prisma · Auth.js · zod ·
+WhatsApp Cloud API · Vitest · GitHub Actions · Vercel.
+
+## Requisitos
+
+- Node.js 20.9 o superior (probado con 24)
+- npm
+
+## Cómo correrlo
 
 ```bash
+npm install
+cp .env.example .env   # en PowerShell: Copy-Item .env.example .env
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrí http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Comando                | Qué hace                          |
+| ---------------------- | --------------------------------- |
+| `npm run dev`          | Servidor de desarrollo            |
+| `npm run build`        | Build de producción               |
+| `npm run start`        | Corre el build de producción      |
+| `npm run lint`         | Revisa el código con ESLint       |
+| `npm run typecheck`    | Revisa los tipos con TypeScript   |
+| `npm run format`       | Formatea todo con Prettier        |
+| `npm run format:check` | Verifica el formato sin modificar |
 
-## Learn More
+## Estructura de carpetas
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/      Rutas y pantallas (App Router de Next.js)
+lib/      Código compartido: utilidades, schemas de zod, constantes
+server/   Lógica solo de servidor: bot, pedidos, WhatsApp, acceso a datos
+prisma/   Schema y migraciones de la base de datos
+public/   Archivos estáticos
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Reglas del producto
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+El bot nunca inventa datos (todo sale de la base), la IA solo clasifica la intención, y si falta
+un dato se deriva a una persona. Detalle completo en `CLAUDE.md`.
