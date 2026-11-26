@@ -55,22 +55,26 @@ const slots = [
   { type: "ORDERS", opensAt: 19 * 60, closesAt: 22 * 60 + 30 },
 ] as const;
 
-// Crea el usuario dueño con los datos del .env. Si ya existe, no lo modifica.
-async function seedOwner() {
-  const email = process.env.SEED_OWNER_EMAIL?.trim().toLowerCase();
-  const password = process.env.SEED_OWNER_PASSWORD;
+// Crea un usuario con los datos del .env. Si ya existe, no lo modifica.
+async function seedUser(prefix: string, name: string, role: "OWNER" | "EMPLOYEE") {
+  const email = process.env[`${prefix}_EMAIL`]?.trim().toLowerCase();
+  const password = process.env[`${prefix}_PASSWORD`];
   if (!email || !password) {
-    console.log("Sin SEED_OWNER_EMAIL / SEED_OWNER_PASSWORD: no se crea el usuario dueño.");
+    console.log(`Sin ${prefix}_EMAIL / ${prefix}_PASSWORD: no se crea el usuario ${name}.`);
     return;
   }
-  if (password.length < 8) throw new Error("SEED_OWNER_PASSWORD necesita 8 caracteres o más.");
+  if (password.length < 8) throw new Error(`${prefix}_PASSWORD necesita 8 caracteres o más.`);
 
-  await prisma.user.upsert({
+  const user = await prisma.user.upsert({
     where: { email },
     update: {},
-    create: { email, name: "Dueño", role: "OWNER", passwordHash: await hashPassword(password) },
+    create: { email, name, role, passwordHash: await hashPassword(password) },
   });
-  console.log("Usuario dueño listo.");
+  if (user.role !== role) {
+    console.log(`El email de ${prefix}_EMAIL ya pertenece a otro rol: no se modificó.`);
+    return;
+  }
+  console.log(`Usuario ${name} listo.`);
 }
 
 async function main() {
@@ -117,7 +121,8 @@ async function main() {
       });
     }
   }
-  await seedOwner();
+  await seedUser("SEED_OWNER", "Dueño", "OWNER");
+  await seedUser("SEED_EMPLOYEE", "Empleado", "EMPLOYEE");
   console.log("Seed listo.");
 }
 
