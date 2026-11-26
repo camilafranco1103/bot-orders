@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
+import { hashPassword } from "../lib/password";
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DIRECT_URL ?? process.env.DATABASE_URL }),
@@ -54,6 +55,24 @@ const slots = [
   { type: "ORDERS", opensAt: 19 * 60, closesAt: 22 * 60 + 30 },
 ] as const;
 
+// Crea el usuario dueño con los datos del .env. Si ya existe, no lo modifica.
+async function seedOwner() {
+  const email = process.env.SEED_OWNER_EMAIL?.trim().toLowerCase();
+  const password = process.env.SEED_OWNER_PASSWORD;
+  if (!email || !password) {
+    console.log("Sin SEED_OWNER_EMAIL / SEED_OWNER_PASSWORD: no se crea el usuario dueño.");
+    return;
+  }
+  if (password.length < 8) throw new Error("SEED_OWNER_PASSWORD necesita 8 caracteres o más.");
+
+  await prisma.user.upsert({
+    where: { email },
+    update: {},
+    create: { email, name: "Dueño", role: "OWNER", passwordHash: await hashPassword(password) },
+  });
+  console.log("Usuario dueño listo.");
+}
+
 async function main() {
   for (const { category, products } of catalog) {
     const cat = await prisma.category.upsert({
@@ -98,6 +117,7 @@ async function main() {
       });
     }
   }
+  await seedOwner();
   console.log("Seed listo.");
 }
 
