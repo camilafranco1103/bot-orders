@@ -4,3 +4,10 @@ export function formatTime(minutes: number): string {
   const rest = String(minutes % 60).padStart(2, "0");
   return `${hours}:${rest}`;
 }
+
+const pesos = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" });
+
+/** Muestra un precio guardado en centavos. Ej.: 250000 → "$ 2.500,00". */
+export function formatPrice(cents: number): string {
+  return pesos.format(cents / 100);
+}
