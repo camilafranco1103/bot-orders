@@ -1,7 +1,19 @@
 import { Suspense, type ReactNode } from "react";
+import { requireUser } from "@/server/auth/require-user";
 import { Marca } from "./marca";
 import { NavegacionInferior, NavegacionLateral } from "./navegacion";
 import { SelloSinTacc } from "./sello-sin-tacc";
+
+// Componentes de servidor: leen el rol y se lo pasan al menú, que corre en el navegador.
+async function LateralSegunRol() {
+  const { role } = await requireUser();
+  return <NavegacionLateral rol={role} />;
+}
+
+async function InferiorSegunRol() {
+  const { role } = await requireUser();
+  return <NavegacionInferior rol={role} />;
+}
 
 type MarcoPanelProps = {
   salir: ReactNode; // botón para cerrar sesión
@@ -17,8 +29,8 @@ export function MarcoPanel({ salir, children }: MarcoPanelProps) {
           <Marca />
           <SelloSinTacc />
           <div className="w-full">
-            <Suspense>
-              <NavegacionLateral />
+            <Suspense fallback={<NavegacionLateral />}>
+              <LateralSegunRol />
             </Suspense>
           </div>
         </div>
@@ -33,8 +45,8 @@ export function MarcoPanel({ salir, children }: MarcoPanelProps) {
       {/* El espacio de abajo evita que la barra inferior tape el contenido en el celular. */}
       <main className="min-w-0 flex-1 p-4 pb-24 md:p-8">{children}</main>
 
-      <Suspense>
-        <NavegacionInferior />
+      <Suspense fallback={<NavegacionInferior />}>
+        <InferiorSegunRol />
       </Suspense>
     </div>
   );
