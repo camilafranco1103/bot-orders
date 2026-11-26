@@ -1,5 +1,4 @@
-// Schema inicial mínimo para validar la conexión y las migraciones.
-// El modelo de datos completo se diseña en el issue #4.
+// Modelo de datos (issue #4). Todo lo que el bot dice sale de estas tablas.
 
 generator client {
   provider = "prisma-client"
@@ -10,6 +9,8 @@ datasource db {
   provider = "postgresql"
 }
 
+// ---------- Carta ----------
+
 model Category {
   id       Int       @id @default(autoincrement())
   name     String    @unique
@@ -17,14 +18,187 @@ model Category {
 }
 
 model Product {
-  id         Int      @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   name       String
-  priceCents Int
-  available  Boolean  @default(true)
+  priceCents Int // en centavos, para no tener errores de redondeo
+  available  Boolean @default(true) // stock: hay / no hay
+
+  // Opcionales a propósito: vacío (null) significa "falta el dato" y el bot
+  // deriva a una persona. Si no tiene alérgenos, se escribe explícitamente.
+  ingredients        String?
+  allergens          String?
+  crossContamination String?
+
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+
+  substitutes   Substitute[] @relation("ProductSubstitutes") // qué ofrecer si falta este
+  substituteFor Substitute[] @relation("SubstituteFor") // de qué productos es reemplazo
+  orderItems    OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([categoryId])
+}
+
+// Relación producto ↔ producto: "si falta `product`, ofrecer `substitute`".
+model Substitute {
+  productId    Int
+  substituteId Int
+  product      Product @relation("ProductSubstitutes", fields: [productId], references: [id], onDelete: Cascade)
+  substitute   Product @relation("SubstituteFor", fields: [substituteId], references: [id], onDelete: Cascade)
+
+  @@id([productId, substituteId])
+  @@index([substituteId])
+}
+
+// ---------- Clientes ----------
+
+model Customer {
+  id           Int           @id @default(autoincrement())
+  phone        String        @unique // teléfono de WhatsApp: identifica al cliente
+  name         String?
+  createdAt    DateTime      @default(now())
+  orders       Order[]
+  conversation Conversation?
+}
+
+// ---------- Horarios ----------
+
+enum ScheduleType {
+  ATTENTION // atención
+  ORDERS // toma de pedidos
+}
+
+// Una fila por franja: un día con horario cortado tiene dos filas.
+// Un día sin filas significa cerrado.
+model Schedule {
+  id       Int          @id @default(autoincrement())
+  type     ScheduleType
+  weekday  Int // 0 = domingo … 6 = sábado (igual que Date.getDay() de JavaScript)
+  opensAt  Int // minutos desde las 00:00. Ej.: 11:30 = 690
+  closesAt Int
+
+  @@unique([type, weekday, opensAt])
+}
+
+// ---------- Pedidos ----------
+
+enum OrderStatus {
+  PENDING // pendiente
+  CONFIRMED // confirmado
+  REJECTED // rechazado
+  EXPIRED // vencido
+  CANCELLED // cancelado
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  status      OrderStatus @default(PENDING)
+  customerId  Int
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  items       OrderItem[]
+  handledById Int? // quién lo confirmó o rechazó
+  handledBy   User?       @relation(fields: [handledById], references: [id], onDelete: Restrict)
+
+  delayedAt  DateTime? // se completa cuando nadie lo atendió a tiempo
+  resolvedAt DateTime? // cuándo dejó de estar pendiente
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([customerId])
+  @@index([handledById])
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+
+  // Copia del momento del pedido: si el producto cambia, el pedido no.
+  productName    String
+  unitPriceCents Int
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// ---------- Conversaciones ----------
+
+enum ConversationMode {
+  BOT // responde el bot
+  HUMAN // derivada: la atiende una persona del equipo
+}
+
+enum MessageDirection {
+  INBOUND // lo mandó el cliente
+  OUTBOUND // lo mandó el local
+}
+
+// Una conversación por cliente, igual que en WhatsApp.
+model Conversation {
+  id         Int              @id @default(autoincrement())
+  mode       ConversationMode @default(BOT)
+  customerId Int              @unique
+  customer   Customer         @relation(fields: [customerId], references: [id])
+  messages   Message[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+model Message {
+  id             Int              @id @default(autoincrement())
+  // Único: si WhatsApp reenvía un mensaje, no se procesa dos veces.
+  // Puede estar vacío en un mensaje saliente que todavía no se envió.
+  whatsappId     String?          @unique
+  direction      MessageDirection
+  body           String
+  conversationId Int
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime         @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+// ---------- Equipo ----------
+
+enum Role {
+  OWNER // dueño
+  EMPLOYEE // empleado
+}
+
+model User {
+  id            Int        @id @default(autoincrement())
+  email         String     @unique
+  name          String
+  passwordHash  String // nunca se guarda la contraseña, solo su hash
+  role          Role       @default(EMPLOYEE)
+  active        Boolean    @default(true) // se desactiva en vez de borrar
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  handledOrders Order[]
+  changes       AuditLog[]
+}
+
+// ---------- Registro de cambios ----------
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int? // vacío si el cambio lo hizo el sistema
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  entity    String // qué tipo de dato cambió. Ej.: "Product"
+  entityId  String // cuál. Es texto para admitir claves compuestas
+  action    String // Ej.: "create", "update", "delete"
+  oldValue  Json?
+  newValue  Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@index([userId])
 }

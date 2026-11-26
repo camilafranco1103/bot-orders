@@ -28,6 +28,32 @@ const catalog = [
   },
 ];
 
+// Fichas de ejemplo (ficticias). Los productos que no figuran acá quedan sin datos
+// a propósito, para probar que el bot derive a una persona.
+const details = [
+  {
+    name: "Empanada de carne",
+    ingredients: "Premezcla sin TACC, carne vacuna, cebolla, huevo y condimentos",
+    allergens: "Huevo",
+    crossContamination: "Se elabora en una cocina exclusiva sin TACC.",
+  },
+  {
+    name: "Empanada de jamón y queso",
+    ingredients: "Premezcla sin TACC, jamón cocido y queso muzzarella",
+    allergens: "Leche",
+    crossContamination: "Se elabora en una cocina exclusiva sin TACC.",
+    available: false,
+  },
+];
+
+// Horarios de ejemplo en minutos desde las 00:00, de martes (2) a sábado (6).
+const slots = [
+  { type: "ATTENTION", opensAt: 11 * 60, closesAt: 15 * 60 },
+  { type: "ATTENTION", opensAt: 19 * 60, closesAt: 23 * 60 },
+  { type: "ORDERS", opensAt: 11 * 60, closesAt: 14 * 60 + 30 },
+  { type: "ORDERS", opensAt: 19 * 60, closesAt: 22 * 60 + 30 },
+] as const;
+
 async function main() {
   for (const { category, products } of catalog) {
     const cat = await prisma.category.upsert({
@@ -40,6 +66,36 @@ async function main() {
         where: { name: p.name, categoryId: cat.id },
       });
       if (!existing) await prisma.product.create({ data: { ...p, categoryId: cat.id } });
+    }
+  }
+  // Solo completa fichas vacías: no pisa lo que se haya editado después.
+  for (const { name, ...data } of details) {
+    await prisma.product.updateMany({ where: { name, ingredients: null }, data });
+  }
+
+  // Si falta la empanada de jamón y queso, se ofrece la de carne.
+  const missing = await prisma.product.findFirstOrThrow({
+    where: { name: "Empanada de jamón y queso" },
+  });
+  const replacement = await prisma.product.findFirstOrThrow({
+    where: { name: "Empanada de carne" },
+  });
+  const pair = { productId: missing.id, substituteId: replacement.id };
+  await prisma.substitute.upsert({
+    where: { productId_substituteId: pair },
+    update: {},
+    create: pair,
+  });
+
+  for (let weekday = 2; weekday <= 6; weekday++) {
+    for (const slot of slots) {
+      await prisma.schedule.upsert({
+        where: {
+          type_weekday_opensAt: { type: slot.type, weekday, opensAt: slot.opensAt },
+        },
+        update: {},
+        create: { ...slot, weekday },
+      });
     }
   }
   console.log("Seed listo.");
