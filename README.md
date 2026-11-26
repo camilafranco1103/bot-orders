@@ -51,14 +51,16 @@ public/   Archivos estáticos
 
 ## Roles
 
-| Acción                         | Dueño | Empleado |
-| ------------------------------ | ----- | -------- |
-| Gestionar usuarios             | Sí    | No       |
-| Cambiar precios                | Sí    | No       |
-| Crear y borrar productos       | Sí    | No       |
-| Editar la ficha de un producto | Sí    | Sí       |
-| Cambiar stock                  | Sí    | Sí       |
-| Confirmar o rechazar pedidos   | Sí    | Sí       |
+| Acción                               | Dueño | Empleado |
+| ------------------------------------ | ----- | -------- |
+| Gestionar usuarios                   | Sí    | No       |
+| Cambiar precios                      | Sí    | No       |
+| Crear y borrar categorías            | Sí    | No       |
+| Cambiar nombre y orden de categorías | Sí    | Sí       |
+| Crear y borrar productos             | Sí    | No       |
+| Editar la ficha de un producto       | Sí    | Sí       |
+| Cambiar stock                        | Sí    | Sí       |
+| Confirmar o rechazar pedidos         | Sí    | Sí       |
 
 La definición está en `lib/permisos.ts`. Cada página y Server Action restringida llama a
 `requirePermission()`.

@@ -7,6 +7,7 @@ describe("puede", () => {
       "gestionarUsuarios",
       "cambiarPrecios",
       "altaYBajaProductos",
+      "altaYBajaCategorias",
       "editarFichas",
       "cambiarStock",
       "gestionarPedidos",
@@ -25,5 +26,6 @@ describe("puede", () => {
     expect(puede("EMPLOYEE", "gestionarUsuarios")).toBe(false);
     expect(puede("EMPLOYEE", "cambiarPrecios")).toBe(false);
     expect(puede("EMPLOYEE", "altaYBajaProductos")).toBe(false);
+    expect(puede("EMPLOYEE", "altaYBajaCategorias")).toBe(false);
   });
 });
