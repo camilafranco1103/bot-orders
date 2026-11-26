@@ -49,6 +49,20 @@ prisma/   Schema y migraciones de la base de datos
 public/   Archivos estáticos
 ```
 
+## Roles
+
+| Acción                         | Dueño | Empleado |
+| ------------------------------ | ----- | -------- |
+| Gestionar usuarios             | Sí    | No       |
+| Cambiar precios                | Sí    | No       |
+| Crear y borrar productos       | Sí    | No       |
+| Editar la ficha de un producto | Sí    | Sí       |
+| Cambiar stock                  | Sí    | Sí       |
+| Confirmar o rechazar pedidos   | Sí    | Sí       |
+
+La definición está en `lib/permisos.ts`. Cada página y Server Action restringida llama a
+`requirePermission()`.
+
 ## Reglas del producto
 
 El bot nunca inventa datos (todo sale de la base), la IA solo clasifica la intención, y si falta
