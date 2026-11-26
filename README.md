@@ -37,6 +37,7 @@ Abrí http://localhost:3000.
 | `npm run typecheck`    | Revisa los tipos con TypeScript   |
 | `npm run format`       | Formatea todo con Prettier        |
 | `npm run format:check` | Verifica el formato sin modificar |
+| `npm test`             | Corre los tests con Vitest        |
 
 ## Estructura de carpetas
 
