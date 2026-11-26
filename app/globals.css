@@ -1,26 +1,32 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Paleta y tipografías del diseño. Cada token crea clases: bg-primario, text-texto, etc. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-primario: #56652a;
+  --color-primario-oscuro: #3f4b1c;
+  --color-primario-suave: #ecead2;
+  --color-fondo: #fbf6ec;
+  --color-fondo-chat: #f2e8d5;
+  --color-superficie: #fffdf8;
+  --color-barra: #f8efdf;
+  --color-borde: #ecdfc9;
+  --color-borde-fuerte: #d8c6a6;
+  --color-texto: #2e2118;
+  --color-texto-suave: #6a5444;
+  --color-alerta: #b4441b;
+  --color-alerta-texto: #8e3412;
+  --color-alerta-suave: #fae3d4;
+  --color-burbuja-cliente: #f3e3bf;
+  --color-trigo-suave: #f6e2b3;
+  --color-trigo-texto: #7a5410;
+  --color-neutro-suave: #f2e8d6;
+  --color-apagado: #c8b9a0;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-nunito-sans);
+  --font-titulo: var(--font-fraunces);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-fondo);
+  color: var(--color-texto);
 }
