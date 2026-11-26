@@ -78,11 +78,11 @@ async function seedUser(prefix: string, name: string, role: "OWNER" | "EMPLOYEE"
 }
 
 async function main() {
-  for (const { category, products } of catalog) {
+  for (const [position, { category, products }] of catalog.entries()) {
     const cat = await prisma.category.upsert({
       where: { name: category },
       update: {},
-      create: { name: category },
+      create: { name: category, position },
     });
     for (const p of products) {
       const existing = await prisma.product.findFirst({

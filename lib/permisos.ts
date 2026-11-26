@@ -2,7 +2,12 @@
 import type { Role } from "../generated/prisma/enums";
 
 const compartidos = ["editarFichas", "cambiarStock", "gestionarPedidos"] as const;
-const soloDuenio = ["gestionarUsuarios", "cambiarPrecios", "altaYBajaProductos"] as const;
+const soloDuenio = [
+  "gestionarUsuarios",
+  "cambiarPrecios",
+  "altaYBajaProductos",
+  "altaYBajaCategorias",
+] as const;
 
 export type Permiso = (typeof compartidos)[number] | (typeof soloDuenio)[number];
 
