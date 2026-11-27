@@ -6,6 +6,7 @@ import { Etiqueta } from "@/components/etiqueta";
 import { Tarjeta } from "@/components/tarjeta";
 import { filtrarProductos, hrefCarta, leerFiltros } from "@/lib/filtros-carta";
 import { formatPrice } from "@/lib/format";
+import { puede } from "@/lib/permisos";
 import { prisma } from "@/lib/prisma";
 import { datosFaltantes } from "@/lib/producto";
 import { requireUser } from "@/server/auth/require-user";
@@ -58,7 +59,7 @@ function Chips({ titulo, chips }: { titulo: string; chips: Chip[] }) {
 
 // Los filtros viajan en la dirección (?categoria=2): se pueden compartir y funciona "atrás".
 async function Carta({ searchParams }: Pick<PageProps<"/panel/carta">, "searchParams">) {
-  await requireUser();
+  const user = await requireUser();
   const filtros = leerFiltros(await searchParams);
 
   const [categorias, todos] = await Promise.all([
@@ -88,6 +89,15 @@ async function Carta({ searchParams }: Pick<PageProps<"/panel/carta">, "searchPa
 
   return (
     <>
+      {puede(user.role, "altaYBajaProductos") && (
+        <Link
+          href="/panel/carta/productos/nuevo"
+          className="bg-primario text-superficie hover:bg-primario-oscuro flex min-h-11 items-center self-start rounded-[10px] px-4 text-[15px] font-bold"
+        >
+          Nuevo producto
+        </Link>
+      )}
+
       {/* <Form> de Next: al enviarlo cambia la dirección sin recargar la página. */}
       <Form action="/panel/carta" className="flex gap-2">
         {filtros.categoria && <input type="hidden" name="categoria" value={filtros.categoria} />}
@@ -119,7 +129,12 @@ async function Carta({ searchParams }: Pick<PageProps<"/panel/carta">, "searchPa
             <li key={producto.id}>
               <Tarjeta className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="font-bold">{producto.name}</p>
+                  <Link
+                    href={`/panel/carta/productos/${producto.id}`}
+                    className="text-primario-oscuro flex min-h-11 items-center font-bold underline"
+                  >
+                    {producto.name}
+                  </Link>
                   <p className="text-texto-suave text-sm">
                     {producto.category.name} · {formatPrice(producto.priceCents)}
                   </p>
