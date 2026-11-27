@@ -1,6 +1,7 @@
 const tonos = {
   neutro: "bg-neutro-suave text-texto",
   alerta: "bg-alerta-suave text-alerta-texto",
+  aviso: "bg-trigo-suave text-trigo-texto",
 };
 
 type EtiquetaProps = {

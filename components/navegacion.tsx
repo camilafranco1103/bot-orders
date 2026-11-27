@@ -16,10 +16,16 @@ function Icono({ nombre }: { nombre: string }) {
   );
 }
 
-/** Menú de la barra lateral (escritorio). */
-export function NavegacionLateral({ rol }: { rol?: Role }) {
-  const ruta = usePathname();
+type MenuProps = { rol?: Role; ruta: string };
 
+// `Navegacion…` lee la dirección actual. `Menu…` la recibe: sirve de reemplazo mientras
+// carga, porque en rutas variables (/productos/[id]) la dirección no se sabe de antemano.
+export function NavegacionLateral({ rol }: { rol?: Role }) {
+  return <MenuLateral rol={rol} ruta={usePathname()} />;
+}
+
+/** Menú de la barra lateral (escritorio). */
+export function MenuLateral({ rol, ruta }: MenuProps) {
   return (
     <nav aria-label="Secciones del panel">
       <ul className="flex flex-col gap-1">
@@ -47,10 +53,12 @@ export function NavegacionLateral({ rol }: { rol?: Role }) {
   );
 }
 
-/** Barra fija abajo (celular). */
 export function NavegacionInferior({ rol }: { rol?: Role }) {
-  const ruta = usePathname();
+  return <MenuInferior rol={rol} ruta={usePathname()} />;
+}
 
+/** Barra fija abajo (celular). */
+export function MenuInferior({ rol, ruta }: MenuProps) {
   return (
     <nav
       aria-label="Secciones del panel"
