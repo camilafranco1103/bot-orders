@@ -1,10 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { crearProducto, editarProducto } from "./productos";
+import { borrarProducto, crearProducto, editarProducto } from "./productos";
 
 // Base de datos simulada: la transacción recibe estas funciones falsas.
 const tx = vi.hoisted(() => ({
-  product: { findFirst: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+  product: {
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
   category: { findUnique: vi.fn() },
+  orderItem: { count: vi.fn() },
+  substitute: { findMany: vi.fn() },
   auditLog: { create: vi.fn() },
 }));
 
@@ -45,6 +53,26 @@ describe("crearProducto", () => {
 
     expect(await crearProducto(1, { ...ficha, priceCents: 1 })).toMatch("categoría");
     expect(tx.product.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("borrarProducto", () => {
+  beforeEach(() => tx.product.findUnique.mockResolvedValue({ id: 7, ...ficha }));
+
+  it("no borra un producto que aparece en pedidos", async () => {
+    tx.orderItem.count.mockResolvedValue(1);
+
+    expect(await borrarProducto(1, 7)).toMatch("aparece en pedidos");
+    expect(tx.product.delete).not.toHaveBeenCalled();
+  });
+
+  it("registra la baja y la de sus reemplazos", async () => {
+    tx.orderItem.count.mockResolvedValue(0);
+    tx.substitute.findMany.mockResolvedValue([{ productId: 7, substituteId: 8 }]);
+
+    expect(await borrarProducto(1, 7)).toBeUndefined();
+    expect(tx.product.delete).toHaveBeenCalledOnce();
+    expect(tx.auditLog.create).toHaveBeenCalledTimes(2);
   });
 });
 

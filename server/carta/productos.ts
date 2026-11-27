@@ -35,6 +35,33 @@ export function crearProducto(userId: number, datos: Ficha & { priceCents: numbe
   });
 }
 
+export function borrarProducto(userId: number, id: number) {
+  return prisma.$transaction(async (tx) => {
+    const before = await tx.product.findUnique({ where: { id } });
+    if (!before) return inexistente;
+    if ((await tx.orderItem.count({ where: { productId: id } })) > 0) {
+      return "No se puede borrar: aparece en pedidos. Marcalo sin stock.";
+    }
+
+    // La base borra solos los reemplazos que lo mencionan: también se anotan.
+    const reemplazos = await tx.substitute.findMany({
+      where: { OR: [{ productId: id }, { substituteId: id }] },
+    });
+    for (const reemplazo of reemplazos) {
+      await recordChange(tx, {
+        userId,
+        entity: "Substitute",
+        entityId: `${reemplazo.productId}-${reemplazo.substituteId}`,
+        before: reemplazo,
+        after: null,
+      });
+    }
+
+    await tx.product.delete({ where: { id } });
+    await recordChange(tx, { userId, entity: "Product", entityId: id, before, after: null });
+  });
+}
+
 /** Sin `priceCents`, el precio queda como estaba. */
 export function editarProducto(userId: number, id: number, datos: Ficha & { priceCents?: number }) {
   return prisma.$transaction(async (tx) => {

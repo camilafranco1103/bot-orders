@@ -6,7 +6,7 @@ import { puede } from "@/lib/permisos";
 import { leerPrecio } from "@/lib/precio";
 import { idSchema, productoSchema } from "@/lib/schemas";
 import { requirePermission } from "@/server/auth/require-permission";
-import { crearProducto, editarProducto } from "@/server/carta/productos";
+import { borrarProducto, crearProducto, editarProducto } from "@/server/carta/productos";
 
 const campos = [
   "name",
@@ -57,6 +57,14 @@ export async function guardar(previo: EstadoProducto, datos: FormData): Promise<
     error = await crearProducto(user.id, { ...ficha.data, priceCents });
   }
   if (error) return fallo(error);
+
+  volverALaCarta();
+}
+
+export async function borrar(_: EstadoProducto, datos: FormData): Promise<EstadoProducto> {
+  const user = await requirePermission("altaYBajaProductos");
+  const error = await borrarProducto(user.id, idSchema.parse(datos.get("id")));
+  if (error) return { error };
 
   volverALaCarta();
 }
