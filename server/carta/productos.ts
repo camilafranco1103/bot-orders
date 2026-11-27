@@ -35,6 +35,18 @@ export function crearProducto(userId: number, datos: Ficha & { priceCents: numbe
   });
 }
 
+/** Recibe el valor deseado (no "invertir"): repetir el pedido no cambia el resultado. */
+export function cambiarStockProducto(userId: number, id: number, available: boolean) {
+  return prisma.$transaction(async (tx) => {
+    const before = await tx.product.findUnique({ where: { id } });
+    if (!before) return inexistente;
+    if (before.available === available) return;
+
+    const after = await tx.product.update({ where: { id }, data: { available } });
+    await recordChange(tx, { userId, entity: "Product", entityId: id, before, after });
+  });
+}
+
 export function borrarProducto(userId: number, id: number) {
   return prisma.$transaction(async (tx) => {
     const before = await tx.product.findUnique({ where: { id } });

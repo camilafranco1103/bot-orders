@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { borrarProducto, crearProducto, editarProducto } from "./productos";
+import { borrarProducto, cambiarStockProducto, crearProducto, editarProducto } from "./productos";
 
 // Base de datos simulada: la transacción recibe estas funciones falsas.
 const tx = vi.hoisted(() => ({
@@ -53,6 +53,31 @@ describe("crearProducto", () => {
 
     expect(await crearProducto(1, { ...ficha, priceCents: 1 })).toMatch("categoría");
     expect(tx.product.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("cambiarStockProducto", () => {
+  const producto = { id: 7, ...ficha, available: true };
+  beforeEach(() => tx.product.findUnique.mockResolvedValue(producto));
+
+  it("guarda el cambio y lo registra", async () => {
+    tx.product.update.mockResolvedValue({ ...producto, available: false });
+
+    expect(await cambiarStockProducto(1, 7, false)).toBeUndefined();
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 1,
+        oldValue: { available: true },
+        newValue: { available: false },
+      }),
+    });
+  });
+
+  it("no hace nada si ya estaba así", async () => {
+    await cambiarStockProducto(1, 7, true);
+
+    expect(tx.product.update).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 });
 

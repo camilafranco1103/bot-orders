@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { datosFaltantes } from "@/lib/producto";
 import { requireUser } from "@/server/auth/require-user";
 import { ordenCategorias } from "@/server/carta/categorias";
+import { StockProducto } from "./stock-producto";
 
 export default function CartaPage({ searchParams }: PageProps<"/panel/carta">) {
   return (
@@ -138,13 +139,17 @@ async function Carta({ searchParams }: Pick<PageProps<"/panel/carta">, "searchPa
                   <p className="text-texto-suave text-sm">
                     {producto.category.name} · {formatPrice(producto.priceCents)}
                   </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
                   {faltan.length > 0 && (
-                    <Etiqueta texto={`Faltan datos: ${faltan.join(", ")}`} tono="aviso" />
+                    <p className="mt-2">
+                      <Etiqueta texto={`Faltan datos: ${faltan.join(", ")}`} tono="aviso" />
+                    </p>
                   )}
-                  {!producto.available && <Etiqueta texto="Sin stock" tono="alerta" />}
                 </div>
+                <StockProducto
+                  id={producto.id}
+                  nombre={producto.name}
+                  hayStock={producto.available}
+                />
               </Tarjeta>
             </li>
           );
